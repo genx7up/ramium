@@ -1,0 +1,49 @@
+
+name: Docker
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
+jobs:
+
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    steps:
+
+    - name: Check out code
+      uses: actions/checkout@v2
+
+    - name: docker
+      uses: docker://docker
+      with:
+        args: /bin/sh ./build.sh
+      env:
+        REGISTRY_ENDPOINT: registry.hub.docker.com
+        REGISTRY_REPO: registry.hub.docker.com/dockerdig/hello-world
+        REGISTRY_USERNAME: ${{ secrets.REGISTRY_USERNAME }}
+        REGISTRY_PASSWORD: ${{ secrets.REGISTRY_PASSWORD }}
+
+  dispatch:
+    needs: build
+    strategy:
+      matrix:
+        repo: ["aweps/demo-ops"]
+
+    name: Dispatch
+    runs-on: ubuntu-latest
+    steps:
+
+     - name: Repository Dispatch
+       uses: peter-evans/repository-dispatch@v1
+       with:
+         token: ${{ secrets.PA_TOKEN }}
+         repository: ${{ matrix.repo }}
+         event-type: ops_update
+         client-payload: '{ "app" : "demo","dependency" : "demo","github": ${{ tojson(github) }}}'
+
+ #curl -vs --request POST   --url https://api.github.com/repos/slaystack/xops/dispatches   --header "authorization: token ${PA_TOKEN}"   --header 'Accept: application/vnd.github.everest-preview+json'   --header 'content-type: application/json'   --data '{"event_type": "ops_update","client_payload": {"app" : "demo","dependency" : "demo","github" : {"ref": "refs/heads/master","sha": "5e06ae0aa5caa5b4a18adaed27021f0a1cb86e8f","repository": "aweps/demo"}}}'
+
