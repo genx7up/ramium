@@ -1,0 +1,74 @@
+name: Dispatch Receiver for External Updates
+
+on:
+  repository_dispatch:
+    types: dependency_update
+
+jobs:
+
+  build:
+    name: Process update from App Repo
+    if: |
+      !contains(github.event.client_payload.github.event.head_commit.message, 'ci skip')
+      && !contains(github.event.client_payload.github.event.pull_request.title, 'ci skip')
+    runs-on: ubuntu-latest
+    steps:
+
+     - name: Dump the client payload context
+       env:
+         PAYLOAD_CONTEXT: ${{ toJson(github.event.client_payload) }}
+       run: echo "$PAYLOAD_CONTEXT"
+
+     # Checkout the pull request branch
+     - uses: actions/checkout@v2
+       with:
+         token: ${{ secrets.PA_TOKEN }}
+
+     - name: Update dependency
+       run: |
+          if [[ "${{ github.event.client_payload.github.event_name }}" == "pull_request" ]]; then
+            COMMIT=$(echo ${{ github.event.client_payload.github.event.pull_request.head.sha }} | cut -c1-7)
+          else
+            COMMIT=$(echo ${{ github.event.client_payload.github.sha }} | cut -c1-7)
+          fi
+          echo "SOURCE_COMMIT : $COMMIT"
+
+     # Commit the change
+     - name: Commit
+       timeout-minutes: 2
+       env:
+         GITHUB_TOKEN: ${{ secrets.PA_TOKEN }}
+       run: |
+          git config --global user.name 'gitops-bot'
+          git config --global user.email '52609384+gitops-bot@users.noreply.github.com'
+          git add -A
+
+          if [[ "${{ github.event.client_payload.github.event_name }}" == "pull_request" ]]; then
+
+            git commit --allow-empty -s -m '[ops] ${{ github.event.client_payload.github.event.pull_request.user.login }} opened PR#${{ github.event.client_payload.github.event.pull_request.number }} for ${{ github.event.client_payload.github.repository }}:${{ github.event.client_payload.github.event.pull_request.base.ref }} - ${{ github.event.client_payload.github.event.pull_request.title }}'
+
+            # Create PR
+            git pull --ff-only origin master
+            git checkout app-updates || git checkout --track origin/app-updates || git checkout -b app-updates
+            git merge master
+            # Overwrite merge conflicts with ours
+            (git fetch origin app-updates && git rebase -Xtheirs origin/app-updates) || :
+            while ! git push origin app-updates; do
+              git fetch origin app-updates
+              git rebase -Xtheirs origin/app-updates
+            done
+
+            curl -fsSL https://github.com/github/hub/raw/master/script/get | bash -s 2.14.1
+            bin/hub pull-request -m "[ci skip] Dependency updated" || :
+
+          else
+
+            git commit --allow-empty -s -m "[ops] ${{ github.event.client_payload.github.event.pusher.name }} pushed $(echo ${{ github.event.client_payload.github.sha }} | cut -c1-7) to ${{ github.event.client_payload.github.repository }}:$(echo ${{ github.event.client_payload.github.ref }} | sed 's/refs\/heads\///') - ${{ github.event.client_payload.github.event.head_commit.message }}"
+
+            # Push if trigger by a commit in apps repo
+            # Optionally we can decide to raise a PR instead for unreliable source commits
+            git pull --ff-only origin master
+            git push --force-with-lease
+
+          fi
+

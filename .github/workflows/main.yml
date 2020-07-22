@@ -22,7 +22,7 @@ jobs:
     - name: docker
       uses: docker://docker
       with:
-        args: /bin/sh ./build.sh
+        args: /bin/sh ./build.github.sh
       env:
         REGISTRY_ENDPOINT: registry.hub.docker.com
         REGISTRY_REPO: dockerdig/ramium
