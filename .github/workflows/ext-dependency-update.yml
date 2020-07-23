@@ -58,14 +58,11 @@ jobs:
             else
               git checkout $REMOTE_BRANCH
             fi
-            while [ -z $( git merge-base master $REMOTE_BRANCH ) ]; do
+            while [ -z $( git merge-base master origin/$REMOTE_BRANCH ) ]; do
               git fetch --deepen=100 origin master $REMOTE_BRANCH;
             done
 
             git rebase -Xours master
-            if git ls-remote --exit-code --heads origin $REMOTE_BRANCH; then
-              git rebase -Xtheirs origin/$REMOTE_BRANCH
-            fi
             while ! git push origin $REMOTE_BRANCH; do
               git remote set-branches origin '*'
               while [ -z $( git merge-base master origin/$REMOTE_BRANCH ) ]; do
