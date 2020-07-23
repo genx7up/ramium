@@ -63,7 +63,9 @@ jobs:
             done
 
             git rebase -Xours master
-            git rebase -Xtheirs origin/$REMOTE_BRANCH
+            if git ls-remote --exit-code --heads origin $REMOTE_BRANCH; then
+              git rebase -Xtheirs origin/$REMOTE_BRANCH
+            fi
             while ! git push origin $REMOTE_BRANCH; do
               while [ -z $( git merge-base master $REMOTE_BRANCH ) ]; do
                 git fetch --deepen=100 origin master $REMOTE_BRANCH;
