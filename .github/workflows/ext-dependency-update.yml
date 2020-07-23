@@ -23,6 +23,7 @@ jobs:
      - uses: actions/checkout@v2
        with:
          token: ${{ secrets.PA_TOKEN }}
+         fetch-depth: 10
 
      - name: Update dependency
        run: |
@@ -48,14 +49,26 @@ jobs:
             git commit --allow-empty -s -m '[ops] ${{ github.event.client_payload.github.event.pull_request.user.login }} opened PR#${{ github.event.client_payload.github.event.pull_request.number }} for ${{ github.event.client_payload.github.repository }}:${{ github.event.client_payload.github.event.pull_request.base.ref }} - ${{ github.event.client_payload.github.event.pull_request.title }}'
 
             # Create PR
-            git pull --ff-only origin master
-            git checkout app-updates || git checkout --track origin/app-updates || git checkout -b app-updates
-            git merge master
-            # Overwrite merge conflicts with ours
-            (git fetch origin app-updates && git rebase -Xtheirs origin/app-updates) || :
-            while ! git push origin app-updates; do
-              git fetch origin app-updates
-              git rebase -Xtheirs origin/app-updates
+            git pull --depth 10 --ff-only origin master
+            REMOTE_BRANCH=app-updates
+            git remote set-branches origin '*'
+            git fetch --depth 10
+            if ! git ls-remote --exit-code --heads origin $REMOTE_BRANCH; then
+              git checkout -b $REMOTE_BRANCH
+            else
+              git checkout $REMOTE_BRANCH
+            fi
+            while [ -z $( git merge-base master $REMOTE_BRANCH ) ]; do
+              git fetch --deepen=100 origin master $REMOTE_BRANCH;
+            done
+
+            git rebase -Xours master
+            git rebase -Xtheirs origin/$REMOTE_BRANCH
+            while ! git push origin $REMOTE_BRANCH; do
+              while [ -z $( git merge-base master $REMOTE_BRANCH ) ]; do
+                git fetch --deepen=100 origin master $REMOTE_BRANCH;
+              done
+              git rebase -Xtheirs origin/$REMOTE_BRANCH
             done
 
             curl -fsSL https://github.com/github/hub/raw/master/script/get | bash -s 2.14.1
@@ -67,7 +80,7 @@ jobs:
 
             # Push if trigger by a commit in apps repo
             # Optionally we can decide to raise a PR instead for unreliable source commits
-            git pull --ff-only origin master
+            git pull --depth 10 --ff-only origin master
             git push --force-with-lease
 
           fi
