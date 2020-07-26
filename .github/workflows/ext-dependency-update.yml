@@ -50,11 +50,11 @@ jobs:
             git add -A
             if [[ "${{ github.event.client_payload.github.event_name }}" == "pull_request" ]]; then
 
-              git commit -s -m '[ops] ${{ github.event.client_payload.github.event.pull_request.user.login }} opened PR#${{ github.event.client_payload.github.event.pull_request.number }} for ${{ github.event.client_payload.github.repository }}:${{ github.event.client_payload.github.event.pull_request.base.ref }} - ${{ github.event.client_payload.github.event.pull_request.title }}'
+              git commit --allow-empty -s -m '[ops] ${{ github.event.client_payload.github.event.pull_request.user.login }} opened PR#${{ github.event.client_payload.github.event.pull_request.number }} for ${{ github.event.client_payload.github.repository }}:${{ github.event.client_payload.github.event.pull_request.base.ref }} - ${{ github.event.client_payload.github.event.pull_request.title }}'
 
             elif [[ "${{ github.event.client_payload.github.event_name }}" == "release" ]]; then
 
-              git commit -s -m '[ops] ${{ github.event.client_payload.github.event.release.author.login }} released ${{ github.event.client_payload.github.event.release.tag_name }} in ${{ github.event.client_payload.github.repository }} - ${{ github.event.client_payload.github.event.release.name }}'
+              git commit --allow-empty -s -m '[ops] ${{ github.event.client_payload.github.event.release.author.login }} released ${{ github.event.client_payload.github.event.release.tag_name }} in ${{ github.event.client_payload.github.repository }} - ${{ github.event.client_payload.github.event.release.name }}'
 
             fi
 
