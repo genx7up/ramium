@@ -11,6 +11,7 @@ jobs:
     if: |
       !contains(github.event.client_payload.github.event.head_commit.message, 'ci skip')
       && !contains(github.event.client_payload.github.event.pull_request.title, 'ci skip')
+      && github.event.client_payload.github.repository == '<enter>'
     runs-on: ubuntu-latest
     steps:
 
@@ -42,34 +43,36 @@ jobs:
        run: |
           git config --global user.name 'gitops-bot'
           git config --global user.email '52609384+gitops-bot@users.noreply.github.com'
-          git add -A
 
-          if [[ "${{ github.event.client_payload.github.event_name }}" == "pull_request" ]]; then
-
-            git commit --allow-empty -s -m '[ops] ${{ github.event.client_payload.github.event.pull_request.user.login }} opened PR#${{ github.event.client_payload.github.event.pull_request.number }} for ${{ github.event.client_payload.github.repository }}:${{ github.event.client_payload.github.event.pull_request.base.ref }} - ${{ github.event.client_payload.github.event.pull_request.title }}'
+          if [[ "${{ github.event.client_payload.github.event_name }}" == "pull_request" || "${{ github.event.client_payload.github.event_name }}" == "release" ]]; then
 
             # Create PR
-            git pull --depth 10 --ff-only origin master
+            git add -A
+            if [[ "${{ github.event.client_payload.github.event_name }}" == "pull_request" ]]; then
+
+              git commit -s -m '[ops] ${{ github.event.client_payload.github.event.pull_request.user.login }} opened PR#${{ github.event.client_payload.github.event.pull_request.number }} for ${{ github.event.client_payload.github.repository }}:${{ github.event.client_payload.github.event.pull_request.base.ref }} - ${{ github.event.client_payload.github.event.pull_request.title }}'
+
+            elif [[ "${{ github.event.client_payload.github.event_name }}" == "release" ]]; then
+
+              git commit -s -m '[ops] ${{ github.event.client_payload.github.event.release.author.login }} released ${{ github.event.client_payload.github.event.release.tag_name }} in ${{ github.event.client_payload.github.repository }} - ${{ github.event.client_payload.github.event.release.name }}'
+
+            fi
+
             REMOTE_BRANCH=app-updates
             git remote set-branches origin '*'
             git fetch --depth 10
             if ! git ls-remote --exit-code --heads origin $REMOTE_BRANCH; then
               git checkout -b $REMOTE_BRANCH
             else
-              git checkout $REMOTE_BRANCH
-            fi
-            while [ -z $( git merge-base master origin/$REMOTE_BRANCH ) ]; do
-              git fetch --deepen=100 origin master $REMOTE_BRANCH;
-            done
-
-            git rebase -Xours master
-            while ! git push origin $REMOTE_BRANCH; do
-              git remote set-branches origin '*'
               while [ -z $( git merge-base master origin/$REMOTE_BRANCH ) ]; do
                 git fetch --deepen=100 origin master $REMOTE_BRANCH;
               done
-              git fetch --depth 10 origin $REMOTE_BRANCH
-              git rebase -Xtheirs origin/$REMOTE_BRANCH
+              git checkout $REMOTE_BRANCH
+            fi
+
+            git merge -Xtheirs master
+            while ! git push --force-with-lease origin $REMOTE_BRANCH; do
+              git pull --deepen=100 -Xours origin $REMOTE_BRANCH
             done
 
             curl -fsSL https://github.com/github/hub/raw/master/script/get | bash -s 2.14.1
@@ -77,7 +80,17 @@ jobs:
 
           else
 
-            git commit --allow-empty -s -m "[ops] ${{ github.event.client_payload.github.event.pusher.name }} pushed $(echo ${{ github.event.client_payload.github.sha }} | cut -c1-7) to ${{ github.event.client_payload.github.repository }}:$(echo ${{ github.event.client_payload.github.ref }} | sed 's/refs\/heads\///') - ${{ github.event.client_payload.github.event.head_commit.message }}"
+            git add -A
+
+            if echo "${{ github.event.client_payload.github.ref }}" | grep '/tags/'; then
+
+              git commit --allow-empty -s -m "[ops] ${{ github.event.client_payload.github.event.pusher.name }} created a tag ${{ github.event.client_payload.github.repository }}:$(echo ${{ github.event.client_payload.github.ref }} | sed 's/refs\/tags\///')"
+
+            else
+
+              git commit --allow-empty -s -m "[ops] ${{ github.event.client_payload.github.event.pusher.name }} pushed $(echo ${{ github.event.client_payload.github.sha }} | cut -c1-7) to ${{ github.event.client_payload.github.repository }}:$(echo ${{ github.event.client_payload.github.ref }} | sed 's/refs\/heads\///') - ${{ github.event.client_payload.github.event.head_commit.message }}"
+
+            fi
 
             # Push if trigger by a commit in apps repo
             # Optionally we can decide to raise a PR instead for unreliable source commits
