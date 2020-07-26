@@ -1,0 +1,101 @@
+name: Dispatch Receiver for External Updates
+
+on:
+  repository_dispatch:
+    types: dependency_update
+
+jobs:
+
+  build:
+    name: Process update from App Repo
+    if: |
+      !contains(github.event.client_payload.github.event.head_commit.message, 'ci skip')
+      && !contains(github.event.client_payload.github.event.pull_request.title, 'ci skip')
+      && github.event.client_payload.github.repository == '<enter>'
+    runs-on: ubuntu-latest
+    steps:
+
+     - name: Dump the client payload context
+       env:
+         PAYLOAD_CONTEXT: ${{ toJson(github.event.client_payload) }}
+       run: echo "$PAYLOAD_CONTEXT"
+
+     # Checkout the pull request branch
+     - uses: actions/checkout@v2
+       with:
+         token: ${{ secrets.PA_TOKEN }}
+         fetch-depth: 10
+
+     - name: Update dependency
+       run: |
+          if [[ "${{ github.event.client_payload.github.event_name }}" == "pull_request" ]]; then
+            COMMIT=$(echo ${{ github.event.client_payload.github.event.pull_request.head.sha }} | cut -c1-7)
+          else
+            COMMIT=$(echo ${{ github.event.client_payload.github.sha }} | cut -c1-7)
+          fi
+          echo "SOURCE_COMMIT : $COMMIT"
+
+     # Commit the change
+     - name: Commit
+       timeout-minutes: 2
+       env:
+         GITHUB_TOKEN: ${{ secrets.PA_TOKEN }}
+       run: |
+          git config --global user.name 'gitops-bot'
+          git config --global user.email '52609384+gitops-bot@users.noreply.github.com'
+
+          if [[ "${{ github.event.client_payload.github.event_name }}" == "pull_request" || "${{ github.event.client_payload.github.event_name }}" == "release" ]]; then
+
+            # Create PR
+            git add -A
+            if [[ "${{ github.event.client_payload.github.event_name }}" == "pull_request" ]]; then
+
+              git commit --allow-empty -s -m '[ops] ${{ github.event.client_payload.github.event.pull_request.user.login }} opened PR#${{ github.event.client_payload.github.event.pull_request.number }} for ${{ github.event.client_payload.github.repository }}:${{ github.event.client_payload.github.event.pull_request.base.ref }} - ${{ github.event.client_payload.github.event.pull_request.title }}'
+
+            elif [[ "${{ github.event.client_payload.github.event_name }}" == "release" ]]; then
+
+              git commit --allow-empty -s -m '[ops] ${{ github.event.client_payload.github.event.release.author.login }} released ${{ github.event.client_payload.github.event.release.tag_name }} in ${{ github.event.client_payload.github.repository }} - ${{ github.event.client_payload.github.event.release.name }}'
+
+            fi
+
+            REMOTE_BRANCH=app-updates
+            git remote set-branches origin '*'
+            git fetch --depth 10
+            if ! git ls-remote --exit-code --heads origin $REMOTE_BRANCH; then
+              git checkout -b $REMOTE_BRANCH
+            else
+              while [ -z $( git merge-base master origin/$REMOTE_BRANCH ) ]; do
+                git fetch --deepen=100 origin master $REMOTE_BRANCH;
+              done
+              git checkout $REMOTE_BRANCH
+            fi
+
+            git merge -Xtheirs master
+            while ! git push --force-with-lease origin $REMOTE_BRANCH; do
+              git pull --deepen=100 -Xours origin $REMOTE_BRANCH
+            done
+
+            curl -fsSL https://github.com/github/hub/raw/master/script/get | bash -s 2.14.1
+            bin/hub pull-request -m "[ci skip] Dependency updated" || :
+
+          else
+
+            git add -A
+
+            if echo "${{ github.event.client_payload.github.ref }}" | grep '/tags/'; then
+
+              git commit --allow-empty -s -m "[ops] ${{ github.event.client_payload.github.event.pusher.name }} created a tag ${{ github.event.client_payload.github.repository }}:$(echo ${{ github.event.client_payload.github.ref }} | sed 's/refs\/tags\///')"
+
+            else
+
+              git commit --allow-empty -s -m "[ops] ${{ github.event.client_payload.github.event.pusher.name }} pushed $(echo ${{ github.event.client_payload.github.sha }} | cut -c1-7) to ${{ github.event.client_payload.github.repository }}:$(echo ${{ github.event.client_payload.github.ref }} | sed 's/refs\/heads\///') - ${{ github.event.client_payload.github.event.head_commit.message }}"
+
+            fi
+
+            # Push if trigger by a commit in apps repo
+            # Optionally we can decide to raise a PR instead for unreliable source commits
+            git pull --depth 10 --ff-only origin master
+            git push --force-with-lease
+
+          fi
+
