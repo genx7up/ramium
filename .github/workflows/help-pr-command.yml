@@ -1,0 +1,20 @@
+name: help-pr-command
+on:
+  repository_dispatch:
+    types: [help-pr-command]
+jobs:
+  help:
+    runs-on: ubuntu-latest
+    steps:
+     - name: Update comment
+       uses: peter-evans/create-or-update-comment@v1
+       with:
+         token: ${{ secrets.PA_TOKEN }}
+         repository: ${{ github.event.client_payload.github.payload.repository.full_name }}
+         comment-id: ${{ github.event.client_payload.github.payload.comment.id }}
+         body: |
+           > Command | Description
+           > --- | ---
+           > /rebase | Rebase PR
+         reactions: hooray
+

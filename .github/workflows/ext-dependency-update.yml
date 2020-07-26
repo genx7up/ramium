@@ -84,11 +84,11 @@ jobs:
 
             if echo "${{ github.event.client_payload.github.ref }}" | grep '/tags/'; then
 
-              git commit --allow-empty -s -m "[ops] ${{ github.event.client_payload.github.event.pusher.name }} created a tag ${{ github.event.client_payload.github.repository }}:$(echo ${{ github.event.client_payload.github.ref }} | sed 's/refs\/tags\///')"
+              git commit -s -m "[ops] ${{ github.event.client_payload.github.event.pusher.name }} created a tag ${{ github.event.client_payload.github.repository }}:$(echo ${{ github.event.client_payload.github.ref }} | sed 's/refs\/tags\///')"
 
             else
 
-              git commit --allow-empty -s -m "[ops] ${{ github.event.client_payload.github.event.pusher.name }} pushed $(echo ${{ github.event.client_payload.github.sha }} | cut -c1-7) to ${{ github.event.client_payload.github.repository }}:$(echo ${{ github.event.client_payload.github.ref }} | sed 's/refs\/heads\///') - ${{ github.event.client_payload.github.event.head_commit.message }}"
+              git commit -s -m "[ops] ${{ github.event.client_payload.github.event.pusher.name }} pushed $(echo ${{ github.event.client_payload.github.sha }} | cut -c1-7) to ${{ github.event.client_payload.github.repository }}:$(echo ${{ github.event.client_payload.github.ref }} | sed 's/refs\/heads\///') - ${{ github.event.client_payload.github.event.head_commit.message }}"
 
             fi
 
