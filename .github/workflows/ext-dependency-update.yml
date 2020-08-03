@@ -76,7 +76,7 @@ jobs:
             done
 
             curl -fsSL https://github.com/github/hub/raw/master/script/get | bash -s 2.14.1
-            bin/hub pull-request -m "[ci skip] Dependency updated" || :
+            bin/hub pull-request -a genx7up -m "[ci skip] Dependency updated" || :
 
           else
 
@@ -98,4 +98,5 @@ jobs:
             git push --force-with-lease
 
           fi
+
 
