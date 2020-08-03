@@ -121,3 +121,6 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+
+# Ignore owners file
+_owners
