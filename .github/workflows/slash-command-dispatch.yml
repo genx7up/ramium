@@ -10,7 +10,7 @@ jobs:
 
       # Advanced JSON configuration
       - name: Slash Command Dispatch (JSON)
-        uses: peter-evans/slash-command-dispatch@v1
+        uses: peter-evans/slash-command-dispatch@bc81a15cde4033c8fff755c959f2568a29544b82
         with:
           token: ${{ secrets.PA_TOKEN }}
           reaction-token: ${{ secrets.PA_TOKEN }}
