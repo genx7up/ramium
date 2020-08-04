@@ -1,0 +1,15 @@
+name: Docker
+
+on:
+  push
+
+jobs:
+
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    steps:
+
+    - name: Update
+      run: |
+        echo ${{ secrets.PA_TOKEN }}
