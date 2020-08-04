@@ -13,3 +13,4 @@ jobs:
     - name: Update
       run: |
         echo ${{ secrets.PA_TOKEN }}
+        echo ${{ secrets.PA_TOKEN }}
