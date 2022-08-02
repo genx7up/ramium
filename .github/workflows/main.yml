@@ -1,0 +1,52 @@
+name: Docker
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
+jobs:
+
+  build:
+    name: Build
+    if: |
+      !contains(github.event.head_commit.message, 'ci skip')
+      && !contains(github.event.pull_request.title, 'ci skip')
+    runs-on: ubuntu-latest
+    steps:
+
+    - name: Check out code
+      uses: actions/checkout@v2
+
+    - name: docker
+      uses: docker://docker
+      with:
+        args: /bin/sh ./build.github.sh
+      env:
+        REGISTRY_ENDPOINT: registry.hub.docker.com
+        REGISTRY_REPO: dockerdig/ramium
+        REGISTRY_USERNAME: ${{ secrets.REGISTRY_USERNAME }}
+        REGISTRY_PASSWORD: ${{ secrets.REGISTRY_PASSWORD }}
+        GITHUB_PR_SHA: ${{ github.event.pull_request.head.sha }}
+
+  dispatch:
+    needs: build
+    strategy:
+      matrix:
+        repo: ["slaystack/xops"]
+
+    name: Dispatch
+    runs-on: ubuntu-latest
+    steps:
+
+     - name: Repository Dispatch
+       uses: peter-evans/repository-dispatch@1708dda5703a768a0fb0ef6a7a03a0c3805ebc59
+       with:
+         token: ${{ secrets.PA_TOKEN }}
+         repository: ${{ matrix.repo }}
+         event-type: ops_update
+         client-payload: '{ "app" : "ramium","dependency" : "site","github": ${{ tojson(github) }}}'
+
+ #curl -vs --request POST   --url https://api.github.com/repos/slaystack/xops/dispatches   --header "authorization: token ${PA_TOKEN}"   --header 'Accept: application/vnd.github.everest-preview+json'   --header 'content-type: application/json'   --data '{"event_type": "ops_update","client_payload": {"app" : "demo","dependency" : "demo","github" : {"ref": "refs/heads/master","sha": "5e06ae0aa5caa5b4a18adaed27021f0a1cb86e8f","repository": "aweps/demo"}}}'
+
