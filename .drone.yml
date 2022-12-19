@@ -1,0 +1,37 @@
+kind: pipeline
+name: build
+
+platform:
+  os: linux
+  arch: amd64
+
+workspace:
+  base: /workspace
+  path: src
+
+steps:
+- name: build_image
+  pull: if-not-exists
+  image: docker
+  commands:
+  - /bin/sh ./build.drone.sh
+  environment:
+    REGISTRY_ENDPOINT: registry.hub.docker.com
+    REGISTRY_REPO: dockerdig/ramium
+    REGISTRY_USERNAME:
+      from_secret: REGISTRY_USERNAME
+    REGISTRY_PASSWORD:
+      from_secret: REGISTRY_PASSWORD
+  volumes:
+  - name: docksock
+    path: /var/run/docker.sock
+
+volumes:
+- name: docksock
+  host:
+    path: /var/run/docker.sock
+
+trigger:
+  branch:
+  - master
+  - release
