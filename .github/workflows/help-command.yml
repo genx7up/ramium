@@ -7,7 +7,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Update comment
-        uses: peter-evans/create-or-update-comment@41f3207a84f33bd70388036109082784d059dcaa
+        uses: peter-evans/create-or-update-comment@5adcb0bb0f9fb3f95ef05400558bdb3f329ee808
         with:
           token: ${{ secrets.PA_TOKEN }}
           repository: ${{ github.event.client_payload.github.payload.repository.full_name }}
