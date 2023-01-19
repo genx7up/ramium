@@ -1,0 +1,51 @@
+
+name: Slash Command Dispatch
+on:
+  issue_comment:
+    types: [created]
+jobs:
+  slashCommandDispatch:
+    runs-on: ubuntu-latest
+    steps:
+
+      # Advanced JSON configuration
+      - name: Slash Command Dispatch (JSON)
+        uses: peter-evans/slash-command-dispatch@a28ee6cd74d5200f99e247ebc7b365c03ae0ef3c
+        with:
+          token: ${{ secrets.PA_TOKEN }}
+          reaction-token: ${{ secrets.PA_TOKEN }}
+          config: >
+            [
+              {
+                "command": "help",
+                "permission": "write",
+                "issue_type": "issue",
+                "repository": "slaystack/xops"
+              },
+              {
+                "command": "help",
+                "permission": "write",
+                "issue_type": "pull-request",
+                "repository": "slaystack/xops",
+                "event_type_suffix": "-pr-command"
+              },
+              {
+                "command": "hello-world",
+                "permission": "write",
+                "issue_type": "issue",
+                "repository": "slaystack/xops"
+              },
+              {
+                "command": "ping",
+                "permission": "write",
+                "issue_type": "issue",
+                "repository": "slaystack/xops"
+              },
+              {
+                "command": "rebase",
+                "permission": "admin",
+                "issue_type": "pull-request",
+                "repository": "slaystack/xops"
+              }
+            ]
+
