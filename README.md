@@ -1,3 +1,5 @@
+> ⚠️ Check out my newer theme [BlogRa](https://github.com/rafed/BlogRa) which has a better UI and is better maintained.
+
 # Ramium
 A modern hugo theme for awesome blogs
 
@@ -33,7 +35,7 @@ A modern hugo theme for awesome blogs
 
 ## Installation & Update
 
-```
+```sh
 $ # install
 $ mkdir themes
 $ cd themes
@@ -54,7 +56,7 @@ If you want to know more information, see [Hugo doc](https://gohugo.io/themes/in
 
 #### `config.toml` example
 
-```
+```toml
 baseURL = "https://rafed.github.io/ramium/"
 #CanonifyURLs=true
 
@@ -119,7 +121,7 @@ enableemoji = false
 
 ## Frontmatter example
 
-```
+```md
 ---
 title: {{ replace .Name "-" " " | title }}
 date: {{ now.Format "2006-01-2" }}
