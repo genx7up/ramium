@@ -1,0 +1,26 @@
+version: 2.1
+jobs:
+  build_docker:
+    docker:
+      - image: cimg/base:2023.04
+    environment:
+      REGISTRY_ENDPOINT: registry.hub.docker.com
+      REGISTRY_REPO: dockerdig/ramium
+    steps:
+
+      # checkout the repository
+      - checkout
+      # ... steps for building/testing app ...
+
+      - setup_remote_docker:
+          docker_layer_caching: false
+
+      # build and push Docker image
+      - run: /bin/bash ./ci.build.sh
+
+workflows:
+  version: 2.1
+  hugo_and_docker:
+    jobs:
+      - build_docker:
+          context: demo
