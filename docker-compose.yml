@@ -1,0 +1,10 @@
+version: "3.8"
+
+services:
+  default:
+    image: ramium
+    build: ./
+    ports:
+      - 8000:1313
+    env_file:
+      - ./.env
