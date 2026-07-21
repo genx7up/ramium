@@ -3,6 +3,11 @@ name: Slash Command Dispatch
 on:
   issue_comment:
     types: [created]
+# Least-privilege: privileged ops use PA_TOKEN explicitly; the ambient
+# GITHUB_TOKEN needs read only (repo default is write — 2026-07-16 hunt).
+permissions:
+  contents: read
+
 jobs:
   slashCommandDispatch:
     runs-on: ubuntu-latest

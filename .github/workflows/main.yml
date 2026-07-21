@@ -8,19 +8,55 @@ on:
 
 jobs:
 
+<<<<<<< Updated upstream
   build:
     name: Build
     if: |
       !contains(github.event.head_commit.message, 'ci skip')
       && !contains(github.event.pull_request.title, 'ci skip')
+=======
+  pick-runner:
+    name: Pick runner
+>>>>>>> Stashed changes
     runs-on: ubuntu-latest
+    outputs:
+      linux: ${{ steps.linux.outputs.use-runner }}
+    steps:
+      # Self-hosting is OPTIONAL. fallback-on-error guarantees a GitHub-hosted
+      # runner whenever no self-hosted runner is online or the token cannot
+      # list runners — this job never fails the workflow. PA_TOKEN (org-level
+      # secret) can see org/repo runners; the ambient token is the last resort.
+      # Temporary opt-out (e.g. a job misbehaving on the self-hosted box):
+      # set the repo or org Actions VARIABLE NO_SELFHOSTED=true — or
+      # NO_SELFHOSTED_LINUX / NO_SELFHOSTED_MACOS for one lane — to skip the
+      # probe; a skipped probe's empty output makes the runs-on fallback
+      # default take over (GitHub-hosted). Flipping it needs no commit.
+      - name: Detect linux runner
+        id: linux
+        if: vars.NO_SELFHOSTED != 'true' && vars.NO_SELFHOSTED_LINUX != 'true'
+        uses: mikehardy/runner-fallback-action@dc7732f9e532c451b2527b288ba8d58fd4b0a4ca #v1.1.0
+        with:
+          primary-runner: "debian-selfhosted"
+          fallback-runner: "ubuntu-latest"
+          fallback-on-error: "true"
+          github-token: ${{ secrets.PA_TOKEN || github.token }}
+
+  build:
+    needs:
+      - pick-runner
+
+    name: Build
+    if: |
+      !contains(github.event.head_commit.message, 'ci skip')
+      && !contains(github.event.pull_request.title, 'ci skip')
+    runs-on: ${{ fromJSON(needs.pick-runner.outputs.linux || '["ubuntu-latest"]') }}
     steps:
 
     - name: Check out code
       uses: actions/checkout@8e5e7e5ab8b370d6c329ec480221332ada57f0ab #v3.5.2
 
     - name: docker
-      uses: docker://docker
+      uses: docker://docker:29.6.2@sha256:bfec1f5159c63a81ca6fdedbd81404d2c0e16378ed0feec3bb3fbf3998847659
       with:
         args: /bin/sh -c "apk update && apk add bash && /bin/bash ./ci.build.sh"
       env:
