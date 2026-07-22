@@ -9,11 +9,16 @@ on:
 jobs:
 
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
   build:
     name: Build
     if: |
       !contains(github.event.head_commit.message, 'ci skip')
       && !contains(github.event.pull_request.title, 'ci skip')
+=======
+  pick-runner:
+    name: Pick runner
+>>>>>>> Stashed changes
 =======
   pick-runner:
     name: Pick runner
