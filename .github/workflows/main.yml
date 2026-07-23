@@ -10,6 +10,7 @@ jobs:
 
 <<<<<<< Updated upstream
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
   build:
     name: Build
     if: |
@@ -22,6 +23,19 @@ jobs:
 =======
   pick-runner:
     name: Pick runner
+>>>>>>> Stashed changes
+=======
+  pick-runner:
+    name: Pick runner
+    # Belt-and-braces for a probe-JOB failure (e.g. GitHub cannot resolve
+    # the action itself — the one mode fallback-on-error cannot catch, since
+    # it never gets to run): continue-on-error keeps this job's conclusion
+    # green with empty outputs, so consumers run on their runs-on fallback
+    # default instead of being SKIPPED. Without this, a consumer lacking a
+    # status-check function in its `if:` is skipped on probe failure — and a
+    # skipped required check PASSES branch protection with the gate never
+    # having run.
+    continue-on-error: true
 >>>>>>> Stashed changes
     runs-on: ubuntu-latest
     outputs:
