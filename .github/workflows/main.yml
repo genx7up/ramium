@@ -11,6 +11,7 @@ jobs:
 <<<<<<< Updated upstream
 <<<<<<< Updated upstream
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
   build:
     name: Build
     if: |
@@ -25,6 +26,8 @@ jobs:
     name: Pick runner
 >>>>>>> Stashed changes
 =======
+=======
+>>>>>>> Stashed changes
   pick-runner:
     name: Pick runner
     # Belt-and-braces for a probe-JOB failure (e.g. GitHub cannot resolve
@@ -36,6 +39,9 @@ jobs:
     # skipped required check PASSES branch protection with the gate never
     # having run.
     continue-on-error: true
+<<<<<<< Updated upstream
+>>>>>>> Stashed changes
+=======
 >>>>>>> Stashed changes
     runs-on: ubuntu-latest
     outputs:
